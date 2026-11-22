@@ -30,6 +30,7 @@
   --done:#1f9d73;
   --key:#ffffff;
   --blackkey:#1d1b3a;
+  --ticket:#1d1b3a;
   --f-display:"Unbounded","Manrope",system-ui,sans-serif;
   --f-body:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
@@ -37,25 +38,26 @@
   :root:not([data-theme="light"]){
     color-scheme:dark;
     --bg:#14132a;--card:#211f40;--ink:#f1f0fb;--muted:#a6a4c6;--line:#35335a;
-    --accent:#ff6b9d;--accent-ink:#1d1b3a;--done:#4fd1a5;--key:#e9e8f5;--blackkey:#0b0a1a;
+    --accent:#ff6b9d;--accent-ink:#1d1b3a;--done:#4fd1a5;--key:#e9e8f5;--blackkey:#0b0a1a;--ticket:#2f2c5c;
   }
 }
 :root[data-theme="dark"]{
   color-scheme:dark;
   --bg:#14132a;--card:#211f40;--ink:#f1f0fb;--muted:#a6a4c6;--line:#35335a;
-  --accent:#ff6b9d;--accent-ink:#1d1b3a;--done:#4fd1a5;--key:#e9e8f5;--blackkey:#0b0a1a;
+  --accent:#ff6b9d;--accent-ink:#1d1b3a;--done:#4fd1a5;--key:#e9e8f5;--blackkey:#0b0a1a;--ticket:#2f2c5c;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.35}
 .wrap{max-width:520px;margin:0 auto;padding:calc(20px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(48px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));display:flex;flex-direction:column;gap:16px}
-header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px}
 h1{font-family:var(--f-display);font-weight:800;font-size:24px;margin:0;line-height:1.1;text-wrap:balance}
 .sub{color:var(--muted);font-size:15px;margin-top:6px}
 .sub b{color:var(--ink);font-size:16px}
 button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
 button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .ghost{background:transparent;border:1.5px solid var(--line);border-radius:999px;padding:9px 14px;font-size:15px;font-weight:600;white-space:nowrap}
+.ghost.icon{flex:none;width:44px;height:44px;padding:0;display:grid;place-items:center;border-radius:50%}
 .ghost.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 
 /* piano */
@@ -67,6 +69,14 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 .pkey.sel small{color:inherit;opacity:.85}
 .bk{position:absolute;top:0;width:9%;height:44px;background:var(--blackkey);border-radius:0 0 5px 5px;transform:translateX(-50%);pointer-events:none;z-index:1}
 
+/* ticket: день, время первого урока, число уроков */
+.ticket{display:flex;background:var(--ticket);color:#fff;border-radius:18px;overflow:hidden}
+.tk-t{flex:none;background:var(--accent);color:var(--accent-ink);padding:12px 14px;display:flex;flex-direction:column;justify-content:center;align-items:center;min-width:92px}
+.tk-t b{font-family:var(--f-display);font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.tk-t span{font-size:12px;font-weight:600}
+.tk-d{padding:12px 14px;display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:0}
+.tk-d b{font-family:var(--f-display);font-size:17px;font-weight:800}
+.tk-d span{font-size:14px;opacity:.82}
 /* progress */
 .prog{display:flex;flex-direction:column;gap:8px}
 .prog-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
@@ -158,11 +168,11 @@ li:first-child{border-top:0}
   <header>
     <div>
       <h1>Собери рюкзак</h1>
-      <div class="sub" id="sub"></div>
     </div>
-    <button class="ghost" id="editBtn" type="button" aria-pressed="false">Изменить</button>
+    <button class="ghost icon" id="editBtn" type="button" aria-pressed="false" aria-label="Настройки"></button>
   </header>
   <div class="piano" id="piano" role="tablist" aria-label="День недели"></div>
+  <div class="ticket" id="ticket" aria-live="polite"></div>
   <div class="prog" id="prog"></div>
   <div id="warn" class="warn" hidden>Телефон не сохраняет изменения. Галочки и новые вещи пропадут, когда ты закроешь страницу.</div>
   <div id="list" style="display:flex;flex-direction:column;gap:12px"></div>
@@ -192,6 +202,7 @@ li:first-child{border-top:0}
 "use strict";
 
 /* ---------- Расписание 5А фс, фортепиано ---------- */
+var ENDS={1:"9:35",2:"10:30",3:"11:30",4:"12:30",5:"13:30",6:"14:30",7:"15:30"};
 var TIMES={1:"8:50",2:"9:45",3:"10:45",4:"11:45",5:"12:45",6:"13:45",7:"14:45"};
 var DAYS=[null,
   {s:"Пн",full:"понедельник",acc:"понедельник"},
@@ -306,6 +317,7 @@ function weekDates(){
 }
 function plural(n){var a=n%10,b=n%100;return (a===1&&b!==11)?"день":(a>=2&&a<=4&&(b<12||b>14))?"дня":"дней";}
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+var GEAR='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
 var CHECK='<svg viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.8"/></svg>';
 
 function lessonsFor(d){
@@ -324,7 +336,7 @@ function render(){
   document.getElementById("app").classList.toggle("editing",editing);
   document.getElementById("app").classList.toggle("papa-on",location.hash==="#priz");
   var eb=document.getElementById("editBtn");
-  eb.textContent=editing?"Готово":"Изменить";eb.classList.toggle("on",editing);eb.setAttribute("aria-pressed",editing);
+  eb.innerHTML=editing?"Готово":GEAR;eb.classList.toggle("icon",!editing);eb.setAttribute("aria-label",editing?"Готово":"Настройки");eb.classList.toggle("on",editing);eb.setAttribute("aria-pressed",editing);
 
   // клавиши
   var ph="";
@@ -336,8 +348,10 @@ function render(){
   document.getElementById("piano").innerHTML=ph;
 
   var w=whenLabel(day);
-  var f1=SCHEDULE[day][0][0];
-  document.getElementById("sub").innerHTML="На "+DAYS[day].acc+(w?", "+w:"")+". Уроков: "+SCHEDULE[day].length+'.<br><b>'+(f1===2?"Ко 2-му":"К "+f1+"-му")+" уроку, начало в "+TIMES[f1]+".</b>";
+  var L=SCHEDULE[day], f1=L[0][0], last=L[L.length-1][0], nl=L.length;
+  var lw=(nl%10===1&&nl%100!==11)?"урок":(nl%10>=2&&nl%10<=4&&(nl%100<12||nl%100>14))?"урока":"уроков";
+  var full=DAYS[day].full.charAt(0).toUpperCase()+DAYS[day].full.slice(1);
+  document.getElementById("ticket").innerHTML='<div class="tk-t"><b>'+TIMES[f1]+'</b><span>'+f1+'-й урок</span></div><div class="tk-d"><b>'+full+'</b><span>'+(w?w+" · ":"")+nl+" "+lw+", до "+ENDS[last]+'</span></div>';
 
   function li(key,text,opts){
     opts=opts||{};
