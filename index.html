@@ -175,32 +175,12 @@ li:first-child{border-top:0}
     <div>
       <h1>Собери рюкзак</h1>
     </div>
-    <button class="ghost icon" id="editBtn" type="button" aria-pressed="false" aria-label="Настройки"></button>
   </header>
   <div class="piano" id="piano" role="tablist" aria-label="День недели"></div>
   <div class="ticket" id="ticket" aria-live="polite"></div>
   <div class="prog" id="prog"></div>
   <div id="warn" class="warn" hidden>Телефон не сохраняет изменения. Галочки и новые вещи пропадут, когда ты закроешь страницу.</div>
   <div id="list" style="display:flex;flex-direction:column;gap:12px"></div>
-  <div class="card streak" id="streak" hidden></div>
-  <div class="card parent" id="parent">
-    <div class="card-h"><h2>Приз. Раздел для папы</h2></div>
-    <div class="room" id="pinHint"></div>
-    <form id="prizeForm">
-      <label for="pzPin">Код<input id="pzPin" type="password" inputmode="numeric" maxlength="4" autocomplete="off"></label>
-      <label for="pzName">Что за приз<input id="pzName" type="text" maxlength="40" autocomplete="off"></label>
-      <label for="pzDays">Сколько собранных дней нужно<input id="pzDays" type="number" inputmode="numeric" min="1" max="200" value="20"></label>
-      <div class="row"><button class="solid" type="submit">Назначить приз</button><span id="pzMsg" class="room"></span></div>
-    </form>
-    <div class="room">Отсчёт начинается с нуля в момент назначения. Отметить можно только сегодняшний и ближайший учебный день.</div>
-  </div>
-  <div class="card backup" id="backup">
-    <div class="card-h"><h2>Запасная копия списков</h2></div>
-    <p>Списки хранятся только в этом телефоне. Скопируй копию и отправь её папе. Если списки пропадут, вставь копию в поле и нажми «Восстановить».</p>
-    <div class="row"><button class="solid" type="button" id="copyBtn">Скопировать копию</button><span id="copyMsg" class="room"></span></div>
-    <textarea id="restoreTxt" placeholder="Вставь сюда копию"></textarea>
-    <div class="row"><button class="ghost" type="button" id="restoreBtn">Восстановить</button><span id="restoreMsg" class="room"></span></div>
-  </div>
 </div>
 
 <script>
@@ -243,7 +223,7 @@ var DEFAULTS={
 /* ---------- Хранение ---------- */
 var KEY="ryukzak-v1", storageOk=true;
 function load(){
-  var st={prize:null,pin:"",done:{},best:0,always:DEFAULTS.always.slice(),papa:DEFAULTS.papa.slice(),subj:{},extras:[],checks:{}};
+  var st={always:DEFAULTS.always.slice(),papa:DEFAULTS.papa.slice(),subj:{},extras:[],checks:{}};
   Object.keys(NAMES).forEach(function(k){st.subj[k]=(DEFAULTS.subj[k]||[]).slice();});
   try{
     var raw=localStorage.getItem(KEY);
@@ -253,17 +233,8 @@ function load(){
 }
 function merge(st,d){
   if(!d||typeof d!=="object") return false;
-  if(!st.pin){                                   // приз под кодом из запасной копии не перезаписываем
-    if(d.prize&&isStr(d.prize.name)&&d.prize.target>0) st.prize={name:d.prize.name,target:+d.prize.target,base:+d.prize.base||0};
-    if(typeof d.pin==="string") st.pin=d.pin;
-  }
-  if(Array.isArray(d.always)) st.always=d.always.filter(isStr).map(function(x){return x==="Бутылка воды"?"Пропуск":x;});
-  if(Array.isArray(d.papa)) st.papa=d.papa.filter(isStr);
-  if(d.subj&&typeof d.subj==="object") Object.keys(NAMES).forEach(function(k){ if(Array.isArray(d.subj[k])) st.subj[k]=d.subj[k].filter(isStr).map(function(x){return x==="Дневник по специальности"?"Тетрадь по специальности":x;}); });
   if(Array.isArray(d.extras)) st.extras=d.extras.filter(function(e){return e&&isStr(e.text)&&e.day>=1&&e.day<=6;});
   if(d.checks&&typeof d.checks==="object") st.checks=d.checks;
-  if(d.done&&typeof d.done==="object") st.done=d.done;
-  if(typeof d.best==="number") st.best=d.best;
   return true;
 }
 function isStr(x){return typeof x==="string"&&x.trim()!=="";}
@@ -294,36 +265,7 @@ var state=load(), day=defaultDay(), editing=false, extraMode="once";
   Object.keys(state.checks).forEach(function(k){if(k<t) delete state.checks[k];});
 })();
 
-/* ---------- Друзья: свои персонажи, музыкальные ---------- */
-function face(x,y){var k="#1d1b3a";return '<circle cx="'+(x-7)+'" cy="'+y+'" r="3" fill="'+k+'"/><circle cx="'+(x+7)+'" cy="'+y+'" r="3" fill="'+k+'"/><circle cx="'+(x-6)+'" cy="'+(y-1)+'" r="1" fill="#fff"/><circle cx="'+(x+8)+'" cy="'+(y-1)+'" r="1" fill="#fff"/><path d="M'+(x-5)+' '+(y+6)+' q5 5 10 0" fill="none" stroke="'+k+'" stroke-width="2" stroke-linecap="round"/>';}
-function svg(b){return '<svg viewBox="0 0 64 64" aria-hidden="true">'+b+'</svg>';}
-var FRIENDS=[
- {name:"Рюк",svg:svg('<path d="M24 16 q8 -13 16 0" fill="none" stroke="#b0245a" stroke-width="4" stroke-linecap="round"/><rect x="11" y="15" width="42" height="43" rx="13" fill="#d6336c"/><rect x="20" y="42" width="24" height="11" rx="4" fill="#b0245a"/>'+face(32,29))},
- {name:"Нотка",svg:svg('<rect x="40" y="8" width="4" height="36" fill="#3d3db0"/><path d="M44 8 q14 5 9 20" fill="none" stroke="#3d3db0" stroke-width="4" stroke-linecap="round"/><ellipse cx="27" cy="44" rx="17" ry="13" fill="#6c6ce0"/>'+face(27,42))},
- {name:"Тик",svg:svg('<path d="M32 7 L53 57 H11 Z" fill="#f2a33a" stroke="#f2a33a" stroke-width="6" stroke-linejoin="round"/><path d="M32 50 L41 16" stroke="#1d1b3a" stroke-width="2.5" stroke-linecap="round"/><circle cx="38" cy="27" r="4" fill="#1d1b3a"/>'+face(30,44))},
- {name:"Бум",svg:svg('<path d="M14 8 L30 22 M50 8 L34 22" stroke="#8a5a2b" stroke-width="3.5" stroke-linecap="round"/><rect x="10" y="24" width="44" height="32" rx="8" fill="#1f9d73"/><ellipse cx="32" cy="25" rx="22" ry="7" fill="#eafff6" stroke="#157a59" stroke-width="2"/>'+face(32,41))},
- {name:"Фа",svg:svg('<path d="M32 5 L39.6 22.5 58.6 24.3 44.3 36.9 48.5 55.5 32 45.8 15.5 55.5 19.7 36.9 5.4 24.3 24.4 22.5 Z" fill="#ffc93c" stroke="#ffc93c" stroke-width="5" stroke-linejoin="round"/>'+face(32,32))},
- {name:"Клавиш",svg:svg('<rect x="16" y="6" width="32" height="52" rx="8" fill="#fff" stroke="#1d1b3a" stroke-width="2.5"/><path d="M17.5 14 a6.5 6.5 0 0 1 6.5 -6.5 h8 v24 h-14.5 Z" fill="#1d1b3a"/>'+face(33,42))}
-];
-function parseISO(s){var a=s.split("-");return new Date(+a[0],+a[1]-1,+a[2]);}
-function prevSchool(d){var x=new Date(d);do{x.setDate(x.getDate()-1);}while(x.getDay()===0);return x;}
-function streak(){
-  // серия = учебные дни подряд (Пн–Сб), к которым рюкзак собран. Воскресенье серию не рвёт.
-  var keys=Object.keys(state.done).sort(); if(!keys.length) return 0;
-  var c=parseISO(keys[keys.length-1]), t=today(), p=new Date(c);
-  p.setDate(p.getDate()+1);
-  while(p<t){ if(p.getDay()!==0) return 0; p.setDate(p.getDate()+1); }   // пропущен прошедший учебный день
-  var n=0; while(state.done[iso(c)]){n++;c=prevSchool(c);} return n;
-}
-var WEEK_GOAL=5;
-function weekDates(){
-  // учебная неделя (Пн–Сб), к которой относится ближайший день сборов
-  var m=dateFor(defaultDay()); m.setDate(m.getDate()-(m.getDay()-1));
-  var out=[]; for(var k=0;k<6;k++){var x=new Date(m);x.setDate(m.getDate()+k);out.push(x);} return out;
-}
-function plural(n){var a=n%10,b=n%100;return (a===1&&b!==11)?"день":(a>=2&&a<=4&&(b<12||b>14))?"дня":"дней";}
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
-var GEAR='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
 var CHECK='<svg viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.8"/></svg>';
 
 function lessonsFor(d){
@@ -339,10 +281,6 @@ function lessonsFor(d){
 
 function render(){
   var dISO=iso(dateFor(day)), checks=state.checks[dISO]||{}, total=0, done=0;
-  document.getElementById("app").classList.toggle("editing",editing);
-  document.getElementById("app").classList.toggle("papa-on",location.hash==="#priz");
-  var eb=document.getElementById("editBtn");
-  eb.innerHTML=editing?"Готово":GEAR;eb.classList.toggle("icon",!editing);eb.setAttribute("aria-label",editing?"Готово":"Настройки");eb.classList.toggle("on",editing);eb.setAttribute("aria-pressed",editing);
 
   // клавиши
   var ph="";
@@ -415,43 +353,6 @@ function render(){
   var p='<div class="prog-row"><strong>Собрано '+done+' из '+total+'</strong>'+(done?'<button type="button" class="linkbtn" id="resetBtn">Снять галочки</button>':'')+'</div><div class="bar"><i style="width:'+(total?Math.round(done*100/total):0)+'%"></i></div>';
 
   if(total&&done===total) p+='<div class="allset">Всё собрано. Рюкзак готов.</div>';
-  var left=total-done, isDone=!!state.done[dISO], all=Object.keys(state.done).length, sh="";
-  var tISO=iso(today()), nx=today(); do{nx.setDate(nx.getDate()+1);}while(nx.getDay()===0);
-  var canMark=(dISO===tISO||dISO===iso(nx));                       // отметить можно только сегодня и ближайший учебный день
-  var wk=weekDates(), wn=wk.filter(function(x){return state.done[iso(x)];}).length;
-  var pz=state.prize, got=pz?all-pz.base:0, won=pz&&got>=pz.target;
-  var open=Math.min(FRIENDS.length,1+Math.floor(all/5));           // друзья открываются за общее число дней и не пропадают
-  var who=FRIENDS[(dateFor(day).getDate())%open], msg, party=false;
-  if(isDone){
-    if(won&&got===pz.target){party=true;msg="Приз твой: "+pz.name+"! Покажи этот экран папе.";}
-    else if(all%5===0&&all/5<FRIENDS.length){who=FRIENDS[all/5];party=true;msg="Привет! Я "+who.name+". Ты собрала рюкзак уже "+all+" "+plural(all)+", и теперь я с тобой.";}
-    else if(wn===WEEK_GOAL&&state.done[dISO]&&wk.some(function(x){return iso(x)===dISO;})){party=true;msg=WEEK_GOAL+" дней на этой неделе! Цель недели взята.";}
-    else msg="Готово! Рюкзак на "+DAYS[day].acc+" собран. Отдыхай.";
-  }
-  else if(!canMark) msg="На "+DAYS[day].acc+" собирать ещё рано. Но посмотреть список можно.";
-  else if(left===0) msg="Всё на месте? Тогда жми на кнопку.";
-  else if(all>0&&streak()===0) msg="Был перерыв, это не страшно. Мы все тут и ждали тебя. Собираем на "+DAYS[day].acc+"?";
-  else msg="Собираем на "+DAYS[day].acc+". Осталось отметить: "+left+".";
-  sh+='<div class="buddy'+(party?" party":"")+'"><div class="face">'+who.svg+'</div><div class="bubble"><b>'+who.name+'</b>'+esc(msg)+'</div></div>';
-  if(isDone) sh+='<button type="button" class="linkbtn" data-done="0">Отменить отметку</button>';
-  else sh+='<button type="button" class="big" data-done="1"'+((left>0||!canMark)?" disabled":"")+'>'+(!canMark?"Этот день ещё не скоро":left>0?"Осталось отметить: "+left:"Я всё собрала")+'</button>';
-
-  if(pz) sh+='<div class="prize">';
-  if(pz){
-    var g=Math.max(0,Math.min(got,pz.target));
-    sh+='<div class="prow"><div class="ptitle">Приз: '+esc(pz.name)+'</div><div class="room">'+g+' из '+pz.target+'</div></div><div class="bar pbar"><i style="width:'+Math.round(g*100/pz.target)+'%"></i></div>'+
-      '<div class="room">'+(won?"Приз заработан. Покажи этот экран папе.":"До приза осталось: "+(pz.target-g)+" "+plural(pz.target-g)+".")+'</div>';
-    sh+='</div>';
-  }
-
-  sh+='<div class="prow"><div class="ptitle">На этой неделе: '+wn+' из '+wk.length+'</div><div class="room">'+(wn>=WEEK_GOAL?"цель взята":"цель: "+WEEK_GOAL)+'</div></div>';
-  sh+='<div class="dots week">';
-  wk.forEach(function(x){sh+='<div class="dot'+(state.done[iso(x)]?" ok":"")+'"><i></i>'+DAYS[x.getDay()].s+'</div>';});
-  sh+='</div><div class="room">Всего собрано дней: '+all+'</div><div class="friends">';
-  FRIENDS.forEach(function(f,k){sh+=k<open?'<div class="fr">'+f.svg+'<span>'+f.name+'</span></div>':'<div class="fr lock"><div class="q">?</div><span>'+(k*5)+'-й день</span></div>';});
-  sh+='</div>';
-  document.getElementById("pinHint").textContent=state.pin?"Введите ваш код из 4 цифр.":"Придумайте код из 4 цифр и запомните его. Без кода приз не изменить.";
-  document.getElementById("streak").innerHTML=sh;
   document.getElementById("prog").innerHTML=p;
 }
 
@@ -493,18 +394,11 @@ document.addEventListener("click",function(ev){
   var t=ev.target.closest("button"); if(!t) return;
   if(t.dataset.note){blackKey(t);return;}
   if(t.dataset.day){day=+t.dataset.day;render();return;}
-  if(t.id==="editBtn"){editing=!editing;render();return;}
   if(t.dataset.mode){extraMode=t.dataset.mode;render();return;}
   var dISO=iso(dateFor(day));
   if(t.dataset.check){
     var c=state.checks[dISO]||(state.checks[dISO]={});
     if(c[t.dataset.check]) delete c[t.dataset.check]; else c[t.dataset.check]=true;
-    save();render();return;
-  }
-  if(t.dataset.done){
-    var nx2=today(); do{nx2.setDate(nx2.getDate()+1);}while(nx2.getDay()===0);
-    if(t.dataset.done==="1"){ if(dISO!==iso(today())&&dISO!==iso(nx2)) return; state.done[dISO]=true; } else delete state.done[dISO];
-    state.best=Math.max(state.best||0,streak());
     save();render();return;
   }
   if(t.dataset.bel){
@@ -534,36 +428,10 @@ document.addEventListener("click",function(ev){
     else {var parts=d.split(":");state.subj[parts[1]].splice(+parts[2],1);}
     save();render();return;
   }
-  if(t.id==="copyBtn"){
-    var txt=JSON.stringify({prize:state.prize,done:state.done,best:state.best,always:state.always,papa:state.papa,subj:state.subj,extras:state.extras});
-    var msg=document.getElementById("copyMsg"),area=document.getElementById("restoreTxt");
-    try{navigator.clipboard.writeText(txt).then(function(){msg.textContent="Скопировано";},function(){area.value=txt;area.select();msg.textContent="Скопируй текст из поля ниже";});}
-    catch(e){area.value=txt;area.select();msg.textContent="Скопируй текст из поля ниже";}
-    return;
-  }
-  if(t.id==="restoreBtn"){
-    var m=document.getElementById("restoreMsg");
-    try{
-      var data=JSON.parse(document.getElementById("restoreTxt").value);
-      if(!data||!data.subj) throw 0;
-      merge(state,data);save();render();
-      document.getElementById("restoreMsg").textContent="Списки восстановлены";
-    }catch(e){m.textContent="Это не похоже на копию. Вставь текст целиком.";}
-  }
 });
 document.addEventListener("submit",function(ev){
   ev.preventDefault();
   var f=ev.target, target=f.dataset.add;
-  if(f.id==="prizeForm"){
-    var pin=document.getElementById("pzPin").value.trim(), nm=document.getElementById("pzName").value.trim(), dd=parseInt(document.getElementById("pzDays").value,10), pm=document.getElementById("pzMsg");
-    if(!/^\d{4}$/.test(pin)){pm.textContent="Код — это 4 цифры.";return;}
-    if(state.pin&&pin!==state.pin){pm.textContent="Код не подходит.";return;}
-    if(!nm){pm.textContent="Впишите название приза.";return;}
-    if(!(dd>=1&&dd<=200)){pm.textContent="Дней: от 1 до 200.";return;}
-    state.pin=pin; state.prize={name:nm,target:dd,base:Object.keys(state.done).length};
-    document.getElementById("pzPin").value="";
-    save();render();pm.textContent="Приз назначен.";return;
-  }
   if(!target) return;
   var v=f.querySelector("input").value.trim(); if(!v) return;
   if(target==="extra"){
