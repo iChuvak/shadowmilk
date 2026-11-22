@@ -126,6 +126,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 .fr svg,.fr .q{width:100%;aspect-ratio:1}
 .fr .q{display:grid;place-items:center;border:2px dashed var(--line);border-radius:50%;font-family:var(--f-display);font-size:16px;color:var(--muted)}
 .card.papa{border-color:var(--done);border-width:2px}
+.card.papa.yes{--ink:#3a2a00;--muted:#7a6220;--line:#f0d27a;--bg:#fff8dc;color:var(--ink);background:linear-gradient(160deg,#fff1b8,#ffd9e6);border-color:#ffb703}
+.papa-row{font-size:22px;letter-spacing:6px;padding:2px 0 4px}
 .papa .seg button{padding:12px 6px;font-size:17px;font-weight:800}
 .card-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
 .num{font-family:var(--f-display);font-size:12px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -220,7 +222,7 @@ var SCHEDULE={
   5:[[1,"hist","214"],[2,"math","211"],[3,"eng","112 / 206"],[4,"bel","213"],[5,"rlit","212"],[7,"spec",""]],
   6:[[2,"slf","201"],[3,"hor","119 / 202"],[4,"hor","119 / 202"],[5,"vml","315"]]
 };
-var NAMES={bel:"Белорусский язык",bellit:"Белорусская литература",pe:"Физкультура",obzh:"ОБЖ",math:"Математика",rus:"Русский язык",rlit:"Русская литература",chim:"Человек и мир",kch:"Классный час",eng:"Иностранный язык",hist:"Всемирная история",hor:"Хор",slf:"Сольфеджио",vml:"Всемирная музыкальная литература",spec:"Специальность"};
+var NAMES={bel:"Белорусский язык",bellit:"Белорусская литература",pe:"Физкультура",obzh:"ОБЖ",math:"Математика",rus:"Русский язык",rlit:"Русская литература",chim:"Человек и мир",kch:"Классный час",eng:"Иностранный язык",hist:"Всемирная история",hor:"Хор 🔔",slf:"Сольфеджио",vml:"Всемирная музыкальная литература",spec:"Специальность"};
 // Стартовые списки. Их можно менять кнопкой «Изменить».
 var DEFAULTS={
   always:["Дневник","Пенал","Пропуск"],
@@ -375,7 +377,7 @@ function render(){
   if(day===6){
     var ans=checks["q:papa"], wl=whenLabel(6);
     var q="Едешь к папе?";
-    h+='<section class="card papa"><div class="card-h"><h2>'+q+'</h2></div>'+
+    h+='<section class="card papa'+(ans==="yes"?" yes":"")+'"><div class="card-h"><h2>'+(ans==="yes"?"Едем к папе! 🎉":q)+'</h2></div>'+(ans==="yes"?'<div class="papa-row" aria-hidden="true">🚗 🎒 🎹 ☀️ 🥳</div>':'')+
       '<div class="seg" role="group" aria-label="'+q+'"><button type="button" data-papa="yes" class="'+(ans==="yes"?"on":"")+'">Да</button><button type="button" data-papa="no" class="'+(ans==="no"?"on":"")+'">Нет</button></div>';
     if(ans==="yes"||editing){
       if(state.papa.length){h+="<ul>";state.papa.forEach(function(t,i){h+=li("p:"+t,t,{del:"p:"+i});});h+="</ul>";}
