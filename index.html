@@ -295,7 +295,7 @@ function render(){
   var L=SCHEDULE[day], f1=L[0][0], last=L[L.length-1][0], nl=L.length;
   var lw=(nl%10===1&&nl%100!==11)?"урок":(nl%10>=2&&nl%10<=4&&(nl%100<12||nl%100>14))?"урока":"уроков";
   var full=DAYS[day].full.charAt(0).toUpperCase()+DAYS[day].full.slice(1);
-  document.getElementById("ticket").innerHTML='<div class="tk-t"><b>'+TIMES[f1]+'</b><span>'+f1+'-й урок</span></div><div class="tk-d"><b>'+full+'</b><span>'+(w?w+" · ":"")+nl+" "+lw+", до "+ENDS[last]+'</span></div>';
+  document.getElementById("ticket").innerHTML='<div class="tk-t"><span>в школу к</span><b>'+TIMES[f1]+'</b></div><div class="tk-d"><b>'+full+'</b><span>'+(w?w+" · ":"")+nl+" "+lw+", до "+ENDS[last]+'</span></div>';
 
   function li(key,text,opts){
     opts=opts||{};
