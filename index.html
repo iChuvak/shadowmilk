@@ -457,13 +457,13 @@ function render(){
 
 /* ---------- Пасхалка: чёрные клавиши играют ---------- */
 var AC=null, FREQ=[277.18,311.13,369.99,415.30,466.16], lastNotes=[];
-function tone(f,at,len){
+function tone(f,at,len,type,vol){
   try{
     AC=AC||new (window.AudioContext||window.webkitAudioContext)();
     if(AC.state==="suspended") AC.resume();
     var o=AC.createOscillator(), g=AC.createGain(), t=AC.currentTime+(at||0);
-    o.type="triangle"; o.frequency.value=f;
-    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.3,t+0.015); g.gain.exponentialRampToValueAtTime(0.0001,t+(len||0.8));
+    o.type=type||"triangle"; o.frequency.value=f;
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol||0.3,t+0.015); g.gain.exponentialRampToValueAtTime(0.0001,t+(len||0.8));
     o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+(len||0.8)+0.05);
   }catch(e){}
 }
@@ -478,8 +478,13 @@ function blackKey(btn){
   lastNotes.push(i); if(lastNotes.length>4) lastNotes.shift();
   if(lastNotes.join("")==="0123"){            // все четыре по порядку слева направо — секретная мелодия
     lastNotes=[];
-    [0,1,2,3,4,3,4].forEach(function(n,k){tone(FREQ[n]*2,0.35+k*0.14,0.5);});
-    ["🎹","⭐","🎶","🥳","🎶","⭐","🎹"].forEach(function(ch,k){setTimeout(function(){fly(8+k*14,ch);},350+k*140);});
+    // Клод Дебюсси, «Лунный свет» (Clair de lune, 1905) — начало темы, верхний голос. Общественное достояние.
+    var U=0.34, at=0.45;
+    [[830.61,3],[698.46,3],[622.25,1],[698.46,1],[622.25,4],[554.37,1],[622.25,1],[554.37,5]].forEach(function(n,k){
+      tone(n[0],at,n[1]*U+0.9,"sine",0.22);
+      (function(t,k){setTimeout(function(){fly(10+k*11.5,k%2?"✨":"🌙");},t*1000);})(at,k);
+      at+=n[1]*U;
+    });
   }
 }
 
