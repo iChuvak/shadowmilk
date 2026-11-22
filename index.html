@@ -69,8 +69,10 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 .pkey.sel small{color:inherit;opacity:.85}
 .bk{position:absolute;top:0;width:9%;height:44px;background:var(--blackkey);border:0;padding:0;border-radius:0 0 5px 5px;transform:translateX(-50%);z-index:1;transition:height .08s}
 .bk.hit{height:48px;filter:brightness(1.6)}
-.fly{position:absolute;top:0;font-size:24px;pointer-events:none;z-index:2;animation:fly .9s ease-out forwards}
-@keyframes fly{from{transform:translate(-50%,0);opacity:1}to{transform:translate(-50%,-80px) rotate(12deg);opacity:0}}
+.fly{position:absolute;top:30px;font-size:34px;line-height:1;pointer-events:none;z-index:5;filter:drop-shadow(0 2px 6px rgba(0,0,0,.35));animation:fly 1.4s ease-out forwards}
+.fly.xl{font-size:52px;top:44px;animation:flybig 2.6s ease-out forwards}
+@keyframes fly{0%{transform:translate(-50%,0) scale(.4);opacity:0}15%{transform:translate(-50%,-10px) scale(1.15);opacity:1}100%{transform:translate(-50%,-110px) rotate(14deg) scale(1);opacity:0}}
+@keyframes flybig{0%{transform:translate(-50%,10px) scale(.3);opacity:0}12%{transform:translate(-50%,-6px) scale(1.2);opacity:1}70%{opacity:1}100%{transform:translate(-50%,-150px) rotate(-12deg) scale(1);opacity:0}}
 @media (prefers-reduced-motion:reduce){.fly{animation-duration:.01s}.bk{transition:none}}
 
 /* ticket: день, время первого урока, число уроков */
@@ -95,8 +97,6 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 .card.extra{border-color:var(--accent)}
 .streak{padding:16px 14px;gap:12px}
 .streak[hidden]{display:none}
-.big{width:100%;border:0;border-radius:14px;padding:16px;font-family:var(--f-display);font-size:17px;font-weight:800;background:var(--done);color:#fff}
-.big:disabled{background:var(--line);color:var(--muted);cursor:default}
 .dots{display:grid;grid-template-columns:repeat(12,1fr);gap:4px}
 .dots.week{grid-template-columns:repeat(6,1fr);gap:8px}
 .dots.week .dot i{aspect-ratio:2.2;border-radius:8px}
@@ -368,9 +368,9 @@ function tone(f,at,len,type,vol){
     o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+(len||0.8)+0.05);
   }catch(e){}
 }
-function fly(leftPct,ch){
-  var el=document.createElement("span"); el.className="fly"; el.textContent=ch; el.style.left=leftPct+"%";
-  document.getElementById("piano").appendChild(el); setTimeout(function(){el.remove();},950);
+function fly(leftPct,ch,big){
+  var el=document.createElement("span"); el.className="fly"+(big?" xl":""); el.textContent=ch; el.style.left=leftPct+"%";
+  document.getElementById("piano").appendChild(el); setTimeout(function(){el.remove();},big?2700:1500);
 }
 function blackKey(btn){
   var i=+btn.dataset.note, left=parseFloat(btn.style.left);
@@ -383,9 +383,11 @@ function blackKey(btn){
     var U=0.34, at=0.45;
     [[830.61,3],[698.46,3],[622.25,1],[698.46,1],[622.25,4],[554.37,1],[622.25,1],[554.37,5]].forEach(function(n,k){
       tone(n[0],at,n[1]*U+0.9,"sine",0.22);
-      (function(t,k){setTimeout(function(){fly(10+k*11.5,k%2?"✨":"🌙");},t*1000);})(at,k);
+      (function(t,k){setTimeout(function(){fly(10+k*11.5,k%2?"✨":"🌙",true);},t*1000);})(at,k);
       at+=n[1]*U;
     });
+    // пока играет мелодия, по всей клавиатуре вспыхивают звёзды
+    for(var q=0;q<22;q++){(function(q){setTimeout(function(){fly(6+Math.random()*88,["⭐","✨","🌟"][q%3]);},450+q*280);})(q);}
   }
 }
 
