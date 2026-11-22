@@ -67,7 +67,11 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 .pkey small{font-size:11px;font-weight:600;color:#6c6a8a;min-height:14px}
 .pkey.sel{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .pkey.sel small{color:inherit;opacity:.85}
-.bk{position:absolute;top:0;width:9%;height:44px;background:var(--blackkey);border-radius:0 0 5px 5px;transform:translateX(-50%);pointer-events:none;z-index:1}
+.bk{position:absolute;top:0;width:9%;height:44px;background:var(--blackkey);border:0;padding:0;border-radius:0 0 5px 5px;transform:translateX(-50%);z-index:1;transition:height .08s}
+.bk.hit{height:48px;filter:brightness(1.6)}
+.fly{position:absolute;top:0;font-size:24px;pointer-events:none;z-index:2;animation:fly .9s ease-out forwards}
+@keyframes fly{from{transform:translate(-50%,0);opacity:1}to{transform:translate(-50%,-80px) rotate(12deg);opacity:0}}
+@media (prefers-reduced-motion:reduce){.fly{animation-duration:.01s}.bk{transition:none}}
 
 /* ticket: день, время первого урока, число уроков */
 .ticket{display:flex;background:var(--ticket);color:#fff;border-radius:18px;overflow:hidden}
@@ -346,7 +350,7 @@ function render(){
     var dt=dateFor(i);
     ph+='<button type="button" role="tab" class="pkey'+(i===day?" sel":"")+'" data-day="'+i+'" aria-selected="'+(i===day)+'"><b>'+DAYS[i].s+'</b><small>'+(whenLabel(i)||dt.getDate()+"."+String(dt.getMonth()+1).padStart(2,"0"))+'</small></button>';
   }
-  [1,2,4,5].forEach(function(n){ph+='<span class="bk" style="left:'+(n*100/6)+'%"></span>';});
+  [1,2,4,5].forEach(function(n,i){ph+='<button type="button" class="bk" data-note="'+i+'" style="left:'+(n*100/6)+'%" aria-label="Чёрная клавиша '+(i+1)+'"></button>';});
   document.getElementById("piano").innerHTML=ph;
 
   var w=whenLabel(day);
@@ -451,9 +455,38 @@ function render(){
   document.getElementById("prog").innerHTML=p;
 }
 
+/* ---------- Пасхалка: чёрные клавиши играют ---------- */
+var AC=null, FREQ=[277.18,311.13,369.99,415.30,466.16], lastNotes=[];
+function tone(f,at,len){
+  try{
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==="suspended") AC.resume();
+    var o=AC.createOscillator(), g=AC.createGain(), t=AC.currentTime+(at||0);
+    o.type="triangle"; o.frequency.value=f;
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.3,t+0.015); g.gain.exponentialRampToValueAtTime(0.0001,t+(len||0.8));
+    o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+(len||0.8)+0.05);
+  }catch(e){}
+}
+function fly(leftPct,ch){
+  var el=document.createElement("span"); el.className="fly"; el.textContent=ch; el.style.left=leftPct+"%";
+  document.getElementById("piano").appendChild(el); setTimeout(function(){el.remove();},950);
+}
+function blackKey(btn){
+  var i=+btn.dataset.note, left=parseFloat(btn.style.left);
+  tone(FREQ[i]); btn.classList.add("hit"); setTimeout(function(){btn.classList.remove("hit");},140);
+  fly(left,["🎵","🎶","♪","♫"][i]);
+  lastNotes.push(i); if(lastNotes.length>4) lastNotes.shift();
+  if(lastNotes.join("")==="0123"){            // все четыре по порядку слева направо — секретная мелодия
+    lastNotes=[];
+    [0,1,2,3,4,3,4].forEach(function(n,k){tone(FREQ[n]*2,0.35+k*0.14,0.5);});
+    ["🎹","⭐","🎶","🥳","🎶","⭐","🎹"].forEach(function(ch,k){setTimeout(function(){fly(8+k*14,ch);},350+k*140);});
+  }
+}
+
 /* ---------- События ---------- */
 document.addEventListener("click",function(ev){
   var t=ev.target.closest("button"); if(!t) return;
+  if(t.dataset.note){blackKey(t);return;}
   if(t.dataset.day){day=+t.dataset.day;render();return;}
   if(t.id==="editBtn"){editing=!editing;render();return;}
   if(t.dataset.mode){extraMode=t.dataset.mode;render();return;}
